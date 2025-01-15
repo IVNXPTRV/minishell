@@ -1,0 +1,7 @@
+# Ignore folders
+obj/
+.vscode/
+
+# Ignore files
+minishell/minishell
+*.o
