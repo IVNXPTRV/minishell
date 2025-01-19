@@ -1,0 +1,8 @@
+digraph BinaryTree {
+    node [shape=circle]
+    node0 [label="root"]
+    node1 [label="left"]
+    node0 -> node1
+    node2 [label="right"]
+    node0 -> node2
+}
