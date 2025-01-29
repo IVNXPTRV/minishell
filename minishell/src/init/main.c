@@ -6,7 +6,7 @@
 /*   By: ipetrov <ipetrov@student.42bangkok.com>    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/12/11 18:06:39 by ipetrov           #+#    #+#             */
-/*   Updated: 2025/01/15 13:45:19 by ipetrov          ###   ########.fr       */
+/*   Updated: 2025/01/22 13:09:51 by ipetrov          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -68,7 +68,8 @@ int	main(int argc, char **argv, char **envp)
 	{
 		return (EXIT_FAILURE);
 	}
-	run_pipeline(cntx, NULL);
+
+	// run_pipeline(cntx, NULL);
 	// run_cmd(cntx, cmd);
 	return (EXIT_SUCCESS);
 }
