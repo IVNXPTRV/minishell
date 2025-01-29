@@ -6,7 +6,7 @@
 #    By: ipetrov <ipetrov@student.42bangkok.com>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/01/29 03:10:10 by ipetrov           #+#    #+#              #
-#    Updated: 2025/01/29 08:45:07 by ipetrov          ###   ########.fr        #
+#    Updated: 2025/01/29 10:09:23 by ipetrov          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -37,11 +37,8 @@ OUTDIR="./outfiles"
 
 init_testfiles() {
 	local content
-
-	rm -rf "$INDIR" "$OUTDIR"
-
+	rm -rf "$INDIR" "$OUTDIR";
 	mkdir -p $INDIR $OUTDIR
-
 	head -c 750K /dev/urandom | tr -dc 'A-Za-z0-9 \n' > $INDIR/$INBIG
 
 	content="line1\nline2\nline3"
@@ -65,10 +62,17 @@ init_testfiles() {
 
 }
 
+
 execute() {
     local brief="$1"
     local prompt="$2"
 	local exitcode
+
+	init_testfiles;
+	unset before_in
+	unset after_in
+	unset before_out
+	unset after_out
 
 	declare -A before_in=()
 	declare -A after_in=()
@@ -76,7 +80,6 @@ execute() {
 	declare -A before_out=()
 	declare -A after_out=()
 
-	init_testfiles;
 	for file in $INDIR/*; do
 		stat_output=$(stat "$file")
 		before_in["$file"]="$stat_output"
@@ -119,10 +122,10 @@ execute() {
 
 	echo -e "${GREY}Infiles:${RESET}"
 	for key in "${all_keys_in[@]}"; do
-		diff_output=$(diff <(echo "${before_in[$key]}") <(echo "${after_in[$key]}"))
+		diff_output=$(diff <(echo "${before_in[$key]}" | sed '/Access:/d') <(echo "${after_in[$key]}" | sed '/Access:/d'))
 		if [[ -n "$diff_output" ]]; then  # Check if diff output is NOT empty
-				echo -e "${RED} $(echo "${after_in[$key]}"| grep "File:" | awk '{print $2}') ${RESET}"
-				echo "$diff_output" | sed -n 's/^> //p' | sed 's/^/\t/'
+				echo -e "${RED} $(echo "${after_in[$key]}" | grep "File:" | awk '{print $2}') ${RESET}"
+				echo "$diff_output" | sed -n 's/^> //p' | sed '/File:/d' | sed 's/^/\t/'
 
 		fi
 	done;
@@ -138,25 +141,23 @@ execute() {
 
 	echo -e "${GREY}Outfiles:${RESET}"
 	for key in "${all_keys_out[@]}"; do
-		diff_output=$(diff <(echo "${before_out[$key]}") <(echo "${after_out[$key]}"))
+		diff_output=$(diff <(echo "${before_out[$key]}" | sed '/Access:/d') <(echo "${after_out[$key]}" | sed '/Access:/d'))
 		if [[ -n "$diff_output" ]]; then  # Check if diff output is NOT empty
 				echo -e "${RED} $(echo "${after_out[$key]}"| grep "File:" | awk '{print $2}') ${RESET}"
-				echo "$diff_output" | sed -n 's/^> //p' | sed 's/^/\t/'
+				echo "$diff_output" | sed -n 's/^> //p' | sed '/File:/d' | sed 's/^/\t/'
 		fi
 	done;
 }
 
-execute \
-	"Ordinary command" \
-	"ls | cat" \
+execute "Ordinary command" "ls | cat";
 
-execute \
-	"No permissions to infile" \
-	"< infiles/inperm cat" \
+
+execute "No permissions to infile" "< infiles/inperm cat";
 
 execute \
 	"No permissions to outfile" \
 	"ls > outfiles/outperm" \
+
 
 execute \
 	"No permissions to infile and outfile" \
@@ -216,10 +217,10 @@ execute \
 
 
 
-# echo $USER
-execute \
-	"Test VAR" \
-	'echo *' \
+# # echo $USER
+# execute \
+# 	"Test VAR" \
+# 	'echo *' \
 
-rm -rf "$INDIR" "$OUTDIR"
 echo -e "\n"
+rm -rf "$INDIR" "$OUTDIR";
