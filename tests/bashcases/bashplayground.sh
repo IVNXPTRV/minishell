@@ -1,12 +1,12 @@
 # **************************************************************************** #
 #                                                                              #
 #                                                         :::      ::::::::    #
-#    redirections.sh                                    :+:      :+:    :+:    #
+#    bashplayground.sh                                  :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
 #    By: ipetrov <ipetrov@student.42bangkok.com>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/01/29 03:10:10 by ipetrov           #+#    #+#              #
-#    Updated: 2025/01/29 10:09:23 by ipetrov          ###   ########.fr        #
+#    Updated: 2025/01/29 11:00:15 by ipetrov          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -24,14 +24,14 @@ END="\033[0m"
 RESET="\e[0m"
 
 
-INDIR="./infiles"
+INDIR=~/infiles
 	INBIG="inbig"
 	INEMPTY="inempty"
 	INORDINARY="inordinary"
 	INPERM="inperm"
 	INSPACES="inspaces"
 
-OUTDIR="./outfiles"
+OUTDIR=~/outfiles
 	OUTORDINARY="outordinary"
 	OUTPERM="outperm"
 
@@ -149,70 +149,82 @@ execute() {
 	done;
 }
 
-execute "Ordinary command" "ls | cat";
+# Check if arguments are passed
+if [ $# -gt 0 ]; then
+	for arg in "$@"; do
+		execute "Provided command" $arg
+	done
+	rm -rf "$INDIR" "$OUTDIR";
+	exit 1
+fi
 
+execute \
+	"Ordinary command" \
+	"ls | cat" \
 
-execute "No permissions to infile" "< infiles/inperm cat";
+execute \
+	"No permissions to infile" \
+	"< $INDIR/$INPERM cat"
 
 execute \
 	"No permissions to outfile" \
-	"ls > outfiles/outperm" \
+	"ls > $OUTDIR/$OUTPERM" \
 
 
 execute \
 	"No permissions to infile and outfile" \
-	"< infiles/inperm cat > outfiles/outperm" \
+	"< $INDIR/$INPERM cat > $OUTDIR/$OUTPERM" \
 
 execute \
 	"No permissions to infile while valid out redir" \
-	"< infiles/inperm cat > outfiles/outordinary" \
+	"< $INDIR/$INPERM cat > $OUTDIR/$OUTORDINARY" \
 
 execute \
 	"No permissions to infile while valid out redir to non existing file" \
-	"< infiles/inperm cat > outfiles/outnonexist" \
+	"< $INDIR/$INPERM cat > $OUTDIR/$OUTNONEXIST" \
 
 
 execute \
 	"All permissions to infile and outfile" \
-	"< infiles/inordinary cat > outfiles/outordinary" \
+	"< $INDIR/$INORDINARY cat > $OUTDIR/$OUTORDINARY" \
 
 execute \
 	"All permissions to infile and outfile, not valid command" \
-	"< infiles/inordinary caaat > outfiles/outordinary" \
+	"< $INDIR/$INORDINARY caaat > $OUTDIR/$OUTORDINARY" \
 
 execute \
 	"No permissions to infile and outfile, not valid command" \
-	"< infiles/inperm caaat > outfiles/outperm" \
+	"< $INDIR/$INPERM caaat > $OUTDIR/$OUTPERM" \
 
 execute \
 	"No permissions to infile, all permissions to outfile, not valid command" \
-	"< infiles/inperm caaat > outfiles/outordinary" \
+	"< $INDIR/$INPERM caaat > $OUTDIR/$OUTORDINARY" \
 
 execute \
 	"All permissions to infile, no permissions to outfile, not valid command" \
-	"< infiles/inordinary caaat > outfiles/outperm" \
+	"< $INDIR/$INORDINARY caaat > $OUTDIR/$OUTPERM" \
 
 execute \
 	"All permissions to outfile1, no permissions to outfile2, not valid command" \
-	"caaat > outfiles/outordinary > outfiles/outperm" \
+	"caaat > $OUTDIR/$OUTORDINARY > $OUTDIR/$OUTPERM" \
 
 execute \
 	"All permissions to outfile1, no permissions to outfile2, valid command" \
-	"ls / > outfiles/outordinary > outfiles/outperm" \
+	"ls / > $OUTDIR/$OUTORDINARY > $OUTDIR/$OUTPERM" \
 
 execute \
 	"Nonexisting outfile1, no permissions to outfile2, valid command" \
-	"ls / > outfiles/outnonexist > outfiles/outperm" \
+	"ls / > $OUTDIR/$OUTNONEXIST > $OUTDIR/$OUTPERM" \
 
 
 execute \
 	"No permissions infile, Nonexisting outfile1, no permissions to outfile2, valid command" \
-	"< infiles/inperm ls / > outfiles/outnonexist > outfiles/outperm" \
+	"< $INDIR/$INPERM ls / > $OUTDIR/$OUTNONEXIST > $OUTDIR/$OUTPERM" \
 
 
 execute \
 	"All permissions infile, No permissions to outfile1, Nonexisting outfile1, valid command" \
-	"< infiles/inordinary cat > outfiles/outperm > outfiles/outnonexist" \
+	"< $INDIR/$INORDINARY cat > $OUTDIR/$OUTPERM > $OUTDIR/$OUTNONEXIST" \
 
 
 
