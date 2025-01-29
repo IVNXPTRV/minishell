@@ -6,7 +6,7 @@
 #    By: ipetrov <ipetrov@student.42bangkok.com>    +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2025/01/29 03:10:10 by ipetrov           #+#    #+#              #
-#    Updated: 2025/01/29 06:27:12 by ipetrov          ###   ########.fr        #
+#    Updated: 2025/01/29 08:25:31 by ipetrov          ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -22,6 +22,7 @@ GREY="\033[38;5;244m"
 PURPLE="\033[0;35m"
 END="\033[0m"
 RESET="\e[0m"
+
 
 INDIR="./infiles"
 	INBIG="inbig"
@@ -64,24 +65,39 @@ init_testfiles() {
 
 }
 
-is_created() {
-	local pathname="$1"
+# is_created() {
+# 	local pathname="$1"
 
-	echo -e "${GREY}Files:${RESET}"
-	if [ -e $pathname ]; then
-		echo -e "${GREY}$pathname has been created.${RESET}"
-	else
-		echo -e "${GREY}$pathname has NOT been created.${RESET}"
-	fi | sed 's/^/\t/'
-}
+# 	echo -e "${GREY}Files:${RESET}"
+# 	if [ -e $pathname ]; then
+# 		echo -e "${GREY}$pathname has been created.${RESET}"
+# 	else
+# 		echo -e "${GREY}$pathname has NOT been created.${RESET}"
+# 	fi | sed 's/^/\t/'
+# }
 
 execute() {
     local brief="$1"
     local prompt="$2"
 	local exitcode
-	local output
+
+	declare -A before_in=()
+	declare -A after_in=()
+
+	declare -A before_out=()
+	declare -A after_out=()
 
 	init_testfiles
+	for file in $INDIR/*; do
+		stat_output=$(stat "$file")
+		before_in["$file"]="$stat_output"
+	done
+
+	for file in $OUTDIR/*; do
+		stat_output=$(stat "$file")
+		before_out["$file"]="$stat_output"
+	done
+
     echo -e "\n"
 	echo -e "$(printf '%*s' $(tput cols) | tr ' ' -)"
 	echo -e "\n"
@@ -92,6 +108,54 @@ execute() {
 	echo -e "${GREY}Code:${RESET} $exitcode"
     echo -e "${GREY}Output:${RESET}"
     echo "$output" | sed 's/^[^:]*:[ ]*line [0-9]*: //' | sed 's/^/\t/'
+
+	for file in $INDIR/*; do
+		stat_output=$(stat "$file")
+		after_in["$file"]="$stat_output"
+	done
+
+	for file in $OUTDIR/*; do
+		stat_output=$(stat "$file")
+		after_out["$file"]="$stat_output"
+	done
+
+	all_keys_in=()
+	for key in "${!before_in[@]}"; do
+		all_keys_in+=("$key")
+	done
+	for key in "${!after_in[@]}"; do
+		all_keys_in+=("$key")
+	done
+	all_keys_in=($(printf "%s\n" "${all_keys_in[@]}" | sort | uniq))
+
+	echo -e "${GREY}Infiles:${RESET}"
+	for key in "${all_keys_in[@]}"; do
+		diff_output=$(diff <(echo "${before_in[$key]}") <(echo "${after_in[$key]}"))
+		if [[ -n "$diff_output" ]]; then  # Check if diff output is NOT empty
+				echo -e "${RED} $(echo "${after_in[$key]}"| grep "File:" | awk '{print $2}') ${RESET}"
+				echo "$diff_output" | sed -n 's/^> //p' | sed 's/^/\t/'
+				echo -e "\n"
+		fi
+	done
+
+	all_keys_out=()
+	for key in "${!before_out[@]}"; do
+		all_keys_out+=("$key")
+	done
+	for key in "${!after_out[@]}"; do
+		all_keys_out+=("$key")
+	done
+	all_keys_out=($(printf "%s\n" "${all_keys_out[@]}" | sort | uniq))
+
+	echo -e "${GREY}Outfiles:${RESET}"
+	for key in "${all_keys_out[@]}"; do
+		diff_output=$(diff <(echo "${before_out[$key]}") <(echo "${after_out[$key]}"))
+		if [[ -n "$diff_output" ]]; then  # Check if diff output is NOT empty
+				echo -e "${RED} $(echo "${after_out[$key]}"| grep "File:" | awk '{print $2}') ${RESET}"
+				echo "$diff_output" | sed -n 's/^> //p' | sed 's/^/\t/'
+				echo -e "\n"
+		fi
+	done
 }
 
 execute \
@@ -118,7 +182,6 @@ execute \
 	"No permissions to infile while valid out redir to non existing file" \
 	"< infiles/inperm cat > outfiles/outnonexist" \
 
-is_created "outfiles/outnonexist"
 
 execute \
 	"All permissions to infile and outfile" \
@@ -152,19 +215,16 @@ execute \
 	"Nonexisting outfile1, no permissions to outfile2, valid command" \
 	"ls / > outfiles/outnonexist > outfiles/outperm" \
 
-is_created "outfiles/outnonexist"
 
 execute \
 	"No permissions infile, Nonexisting outfile1, no permissions to outfile2, valid command" \
 	"< infiles/inperm ls / > outfiles/outnonexist > outfiles/outperm" \
 
-is_created "outfiles/outnonexist"
 
 execute \
 	"All permissions infile, No permissions to outfile1, Nonexisting outfile1, valid command" \
 	"< infiles/inordinary cat > outfiles/outperm > outfiles/outnonexist" \
 
-is_created "outfiles/outnonexist"
 
 echo $USER
 
@@ -172,4 +232,5 @@ execute \
 	"Test VAR" \
 	'echo *' \
 
+rm -rf "$INDIR" "$OUTDIR"
 echo -e "\n"
